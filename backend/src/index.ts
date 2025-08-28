@@ -17,7 +17,11 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-mongoose.connect(process.env.MONGODB_CONNECTION_STRING as string);
+mongoose.connect(process.env.MONGODB_CONNECTION_STRING as string).then(() => {
+  console.log("Connected to MongoDB");
+}).catch((err) => {
+  console.log(err);
+});
 
 const app = express();
 app.use(cookieParser());
@@ -32,6 +36,11 @@ app.use(
 
 app.use(express.static(path.join(__dirname, "../../frontend/dist")));
 
+// Health check endpoint for Render
+app.get("/healthz", (req: Request, res: Response) => {
+  res.status(200).json({ status: "OK", timestamp: new Date().toISOString() });
+});
+
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/my-hotels", myHotelRoutes);
@@ -42,6 +51,8 @@ app.get("*", (req: Request, res: Response) => {
   res.sendFile(path.join(__dirname, "../../frontend/dist/index.html"));
 });
 
-app.listen(7000, () => {
-  console.log("server running on localhost:7000");
+const port = process.env.PORT || 7000;
+
+app.listen(port, () => {
+  console.log(`server running on port ${port}`);
 });
